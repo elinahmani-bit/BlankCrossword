@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>תשבץ ריק - דף עבודה</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Crossword panel (right side in RTL) -->
+    <div class="crossword-panel">
+      <h1 class="title">תשבץ ריק</h1>
+      <div class="grid-wrapper">
+        <table id="crossword-grid"></table>
+      </div>
+      <div class="controls">
+        <div id="mode-indicator" class="mode-indicator">מצב: שורה ↔</div>
+        <div class="hint">רווח = החלפת מצב &nbsp;|&nbsp; נקודה = תא שחור</div>
+      </div>
+    </div>
+
+    <!-- Definitions panel (left side in RTL) -->
+    <div class="definitions-panel">
+      <h2 class="panel-title">הגדרות</h2>
+      <div id="paste-area" class="paste-area" contenteditable="true">
+        <div class="paste-placeholder">
+          <span class="paste-icon">📋</span>
+          <span>הדביקו כאן צילום מסך של ההגדרות</span>
+          <span class="paste-hint">(Ctrl+V)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
