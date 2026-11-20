@@ -13,6 +13,7 @@ const grid = []; // 2D array of cell DOM elements
 document.addEventListener('DOMContentLoaded', () => {
   createGrid();
   setupPasteArea();
+  setupOCR();
   focusCell(0, 0);
 });
 
@@ -39,7 +40,7 @@ function createGrid() {
     grid[r] = [];
     const tr = document.createElement('tr');
 
-    // Row header (Hebrew letter on the right in RTL)
+    // Row header (Hebrew letter)
     const rowHeader = document.createElement('th');
     rowHeader.className = 'row-header';
     rowHeader.textContent = HEBREW_LABELS[r];
@@ -128,13 +129,11 @@ function handleKeyDown(e) {
   // Arrow keys navigation
   if (e.key === 'ArrowRight') {
     e.preventDefault();
-    // Visually right → decrease column index (RTL: col 0 is rightmost)
     if (currentCol > 0) focusCell(currentRow, currentCol - 1);
     return;
   }
   if (e.key === 'ArrowLeft') {
     e.preventDefault();
-    // Visually left → increase column index
     if (currentCol < COLS - 1) focusCell(currentRow, currentCol + 1);
     return;
   }
@@ -149,7 +148,7 @@ function handleKeyDown(e) {
     return;
   }
 
-  // Tab → advance to next cell (Shift+Tab → retreat)
+  // Tab → advance (Shift+Tab → retreat)
   if (e.key === 'Tab') {
     e.preventDefault();
     if (e.shiftKey) {
@@ -165,7 +164,6 @@ function handleKeyDown(e) {
 function isHebrewLetter(key) {
   if (key.length !== 1) return false;
   const code = key.charCodeAt(0);
-  // Hebrew letters: U+05D0 (Alef) through U+05EA (Tav)
   return code >= 0x05D0 && code <= 0x05EA;
 }
 
@@ -178,29 +176,17 @@ function toggleMode() {
 // ===== Cursor Movement =====
 function advanceCursor() {
   if (mode === 'row') {
-    // Move left visually → increase column index
-    if (currentCol < COLS - 1) {
-      focusCell(currentRow, currentCol + 1);
-    }
+    if (currentCol < COLS - 1) focusCell(currentRow, currentCol + 1);
   } else {
-    // Move down
-    if (currentRow < ROWS - 1) {
-      focusCell(currentRow + 1, currentCol);
-    }
+    if (currentRow < ROWS - 1) focusCell(currentRow + 1, currentCol);
   }
 }
 
 function retreatCursor() {
   if (mode === 'row') {
-    // Move right visually → decrease column index
-    if (currentCol > 0) {
-      focusCell(currentRow, currentCol - 1);
-    }
+    if (currentCol > 0) focusCell(currentRow, currentCol - 1);
   } else {
-    // Move up
-    if (currentRow > 0) {
-      focusCell(currentRow - 1, currentCol);
-    }
+    if (currentRow > 0) focusCell(currentRow - 1, currentCol);
   }
 }
 
@@ -213,14 +199,12 @@ function focusCell(row, col) {
 
 // ===== Highlight =====
 function updateHighlight() {
-  // Remove existing highlights
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
       grid[r][c].classList.remove('highlight');
     }
   }
 
-  // Apply highlight to current row or column
   if (mode === 'row') {
     for (let c = 0; c < COLS; c++) {
       grid[currentRow][c].classList.add('highlight');
@@ -246,6 +230,7 @@ function updateModeIndicator() {
 // ===== Definitions Paste Area =====
 function setupPasteArea() {
   const pasteArea = document.getElementById('paste-area');
+  const extractBtn = document.getElementById('extract-btn');
 
   pasteArea.addEventListener('paste', (e) => {
     const items = e.clipboardData?.items;
@@ -261,6 +246,8 @@ function setupPasteArea() {
           const img = document.createElement('img');
           img.src = event.target.result;
           pasteArea.appendChild(img);
+          // Enable the extract button
+          extractBtn.disabled = false;
         };
         reader.readAsDataURL(blob);
         return;
@@ -268,17 +255,53 @@ function setupPasteArea() {
     }
   });
 
-  // Clear placeholder on first focus if it still has the placeholder
-  pasteArea.addEventListener('focus', () => {
-    const placeholder = pasteArea.querySelector('.paste-placeholder');
-    if (placeholder) {
-      // Keep placeholder until actual content is added
+  // Prevent paste area from capturing crossword keyboard shortcuts
+  pasteArea.addEventListener('keydown', (e) => {
+    e.stopPropagation();
+  });
+}
+
+// ===== OCR with Tesseract.js =====
+function setupOCR() {
+  const extractBtn = document.getElementById('extract-btn');
+  const extractedText = document.getElementById('extracted-text');
+
+  extractBtn.addEventListener('click', async () => {
+    const pasteArea = document.getElementById('paste-area');
+    const img = pasteArea.querySelector('img');
+
+    if (!img) return;
+
+    // Show loading state
+    extractBtn.disabled = true;
+    extractBtn.classList.add('loading');
+
+    try {
+      const result = await Tesseract.recognize(img.src, 'heb', {
+        logger: (info) => {
+          if (info.status === 'recognizing text') {
+            const pct = Math.round(info.progress * 100);
+            extractBtn.dataset.progress = pct;
+          }
+        }
+      });
+
+      // Show extracted text
+      extractedText.textContent = result.data.text;
+      extractedText.classList.add('visible');
+    } catch (err) {
+      console.error('OCR error:', err);
+      extractedText.textContent = 'שגיאה בחילוץ טקסט. נסו שנית.';
+      extractedText.classList.add('visible');
+    } finally {
+      // Reset button
+      extractBtn.disabled = false;
+      extractBtn.classList.remove('loading');
     }
   });
 
-  // Prevent paste area from capturing crossword keyboard shortcuts
-  pasteArea.addEventListener('keydown', (e) => {
-    // Allow normal text editing in paste area
+  // Prevent extracted text area from capturing crossword keyboard shortcuts
+  extractedText.addEventListener('keydown', (e) => {
     e.stopPropagation();
   });
 }

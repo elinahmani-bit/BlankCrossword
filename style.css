@@ -16,14 +16,14 @@ body {
 /* ===== Layout ===== */
 .container {
   display: flex;
+  height: 100vh;
   padding: 24px;
   gap: 24px;
   direction: rtl;
   justify-content: center;
-  align-items: flex-start;
 }
 
-/* ===== Crossword Panel (Right) ===== */
+/* ===== Crossword Panel ===== */
 .crossword-panel {
   flex: 0 0 auto;
   display: flex;
@@ -110,13 +110,16 @@ body {
 }
 
 .cell.black {
-  background-color: #2c2c2c !important;
-  box-shadow: none !important;
+  background-color: white !important;
   cursor: default;
 }
 
-.cell.black:focus {
-  box-shadow: inset 0 0 0 2.5px #1565c0 !important;
+.cell.black::after {
+  content: '';
+  width: 60%;
+  height: 60%;
+  background-color: #2c2c2c;
+  border-radius: 50%;
 }
 
 /* ===== Row/Column Highlight ===== */
@@ -125,7 +128,7 @@ body {
 }
 
 .cell.highlight.black {
-  background-color: #2c2c2c !important;
+  background-color: #e3f2fd !important;
 }
 
 /* ===== Controls ===== */
@@ -156,24 +159,26 @@ body {
   color: #888;
 }
 
-/* ===== Definitions Panel (Left) ===== */
+/* ===== Definitions Panel ===== */
 .definitions-panel {
   display: flex;
   flex-direction: column;
   gap: 12px;
   width: 700px;
-  align-self: stretch;
+  max-height: calc(100vh - 48px);
 }
 
 .panel-title {
   font-size: 22px;
   font-weight: 700;
   color: #1a1a2e;
+  flex-shrink: 0;
 }
 
+/* ===== Paste Area (Image) ===== */
 .paste-area {
   flex: 1;
-  min-height: 0;
+  min-height: 120px;
   background: white;
   border: 2px dashed #bdbdbd;
   border-radius: 12px;
@@ -189,11 +194,6 @@ body {
 }
 
 .paste-area:focus {
-  border-color: #1565c0;
-  border-style: solid;
-}
-
-.paste-area:focus-within {
   border-color: #1565c0;
   border-style: solid;
 }
@@ -226,21 +226,91 @@ body {
   border-radius: 8px;
 }
 
+/* ===== Extract Button ===== */
+.extract-btn {
+  flex-shrink: 0;
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  background: #1565c0;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+
+.extract-btn:hover:not(:disabled) {
+  background: #0d47a1;
+}
+
+.extract-btn:disabled {
+  background: #b0bec5;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.extract-btn.loading {
+  position: relative;
+  color: transparent;
+}
+
+.extract-btn.loading::after {
+  content: '⏳ מחלץ טקסט...';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 15px;
+}
+
+/* ===== Extracted Text ===== */
+.extracted-text {
+  flex: 1;
+  min-height: 80px;
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 16px;
+  overflow-y: auto;
+  outline: none;
+  font-size: 15px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  direction: rtl;
+  color: #333;
+  display: none;
+}
+
+.extracted-text:focus {
+  border-color: #1565c0;
+}
+
+.extracted-text.visible {
+  display: block;
+}
+
 /* ===== Scrollbar Styling ===== */
-.paste-area::-webkit-scrollbar {
+.paste-area::-webkit-scrollbar,
+.extracted-text::-webkit-scrollbar {
   width: 8px;
 }
 
-.paste-area::-webkit-scrollbar-track {
+.paste-area::-webkit-scrollbar-track,
+.extracted-text::-webkit-scrollbar-track {
   background: #f5f5f5;
   border-radius: 4px;
 }
 
-.paste-area::-webkit-scrollbar-thumb {
+.paste-area::-webkit-scrollbar-thumb,
+.extracted-text::-webkit-scrollbar-thumb {
   background: #ccc;
   border-radius: 4px;
 }
 
-.paste-area::-webkit-scrollbar-thumb:hover {
+.paste-area::-webkit-scrollbar-thumb:hover,
+.extracted-text::-webkit-scrollbar-thumb:hover {
   background: #aaa;
 }
