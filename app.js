@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
   createGrid();
   setupPasteArea();
   setupOCR();
+  setupSaveLoad();
   focusCell(0, 0);
 });
 
@@ -304,4 +305,95 @@ function setupOCR() {
   extractedText.addEventListener('keydown', (e) => {
     e.stopPropagation();
   });
+}
+
+// ===== Save / Load =====
+function setupSaveLoad() {
+  const saveBtn = document.getElementById('save-btn');
+  const loadBtn = document.getElementById('load-btn');
+  const loadInput = document.getElementById('load-input');
+
+  saveBtn.addEventListener('click', saveToFile);
+  loadBtn.addEventListener('click', () => loadInput.click());
+  loadInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) loadFromFile(file);
+    loadInput.value = ''; // reset so the same file can be loaded again
+  });
+}
+
+function saveToFile() {
+  const extractedText = document.getElementById('extracted-text');
+
+  // Collect grid state
+  const gridData = [];
+  for (let r = 0; r < ROWS; r++) {
+    gridData[r] = [];
+    for (let c = 0; c < COLS; c++) {
+      const cell = grid[r][c];
+      if (cell.classList.contains('black')) {
+        gridData[r][c] = '.';
+      } else {
+        gridData[r][c] = cell.textContent || '';
+      }
+    }
+  }
+
+  const data = {
+    definitions: extractedText.textContent || '',
+    grid: gridData
+  };
+
+  // Trigger download
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'crossword.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function loadFromFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      restoreState(data);
+    } catch (err) {
+      console.error('Failed to load file:', err);
+      alert('שגיאה בטעינת הקובץ');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function restoreState(data) {
+  // Restore grid
+  if (data.grid) {
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const cell = grid[r][c];
+        const value = data.grid[r]?.[c] || '';
+        cell.classList.remove('black');
+        if (value === '.') {
+          cell.textContent = '';
+          cell.classList.add('black');
+        } else {
+          cell.textContent = value;
+        }
+      }
+    }
+  }
+
+  // Restore definitions text
+  if (data.definitions) {
+    const extractedText = document.getElementById('extracted-text');
+    extractedText.textContent = data.definitions;
+    extractedText.classList.add('visible');
+  }
+
+  // Reset cursor to top-right
+  focusCell(0, 0);
 }
